@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - Smart Home Energy Optimizer{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="card">
+        <h2>Profile Settings</h2>
+        <form method="post" class="profile-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.monthly_limit.id_for_label }}">Monthly Energy Limit (kWh)</label>
+                {{ form.monthly_limit }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.season.id_for_label }}">Current Season</label>
+                {{ form.season }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.temperature.id_for_label }}">Temperature (°C)</label>
+                {{ form.temperature }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.humidity.id_for_label }}">Humidity (%)</label>
+                {{ form.humidity }}
+            </div>
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Your Achievements</h2>
+        <div class="achievements-list">
+            {% for achievement in achievements %}
+            <div class="achievement-card">
+                <span class="badge badge-{{ achievement.badge_level|lower }}">{{ achievement.badge_level }}</span>
+                <h3>{{ achievement.title }}</h3>
+                <p>{{ achievement.description }}</p>
+                <small>Earned on: {{ achievement.date_earned|date:"F j, Y" }}</small>
+            </div>
+            {% empty %}
+            <p>No achievements earned yet. Start saving energy to earn badges!</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Energy Saving Goals</h2>
+        <div class="goals-container">
+            <div class="goal">
+                <h3>Monthly Target</h3>
+                <p>Stay below {{ form.monthly_limit.value|default:0 }} kWh</p>
+            </div>
+            <div class="goal">
+                <h3>Peak Usage</h3>
+                <p>Reduce peak hour consumption (2 PM - 6 PM)</p>
+            </div>
+            <div class="goal">
+                <h3>Standby Power</h3>
+                <p>Minimize standby power consumption</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

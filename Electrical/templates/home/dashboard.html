@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Dashboard - Smart Home Energy Optimizer{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Notification Alerts -->
+    {% if limit_percentage > 90 %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Warning!</strong> You have used {{ limit_percentage|floatformat:1 }}% of your monthly limit. Consider reducing your energy consumption.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Smart Suggestions -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Smart Energy Recommendations</h5>
+                </div>
+                <div class="card-body">
+                    {% if suggestions %}
+                        <div class="row">
+                            {% for suggestion in suggestions %}
+                            <div class="col-md-6 mb-3">
+                                <div class="alert alert-info">
+                                    <h6 class="alert-heading">{{ suggestion.title }}</h6>
+                                    <p class="mb-0">{{ suggestion.description }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No suggestions available at the moment. Your energy usage is optimal!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Appliance Consumption Breakdown -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Appliance Consumption Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="consumptionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Consumption Progress -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Monthly Consumption</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Current Usage: {{ total_consumption|floatformat:2 }} kWh</span>
+                            <span>Limit: {{ monthly_limit|floatformat:2 }} kWh</span>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar {% if limit_percentage > 90 %}bg-danger{% elif limit_percentage > 70 %}bg-warning{% else %}bg-success{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ limit_percentage }}%"
+                                 aria-valuenow="{{ limit_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                                {{ limit_percentage|floatformat:1 }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Energy Cost Calculator -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Energy Cost Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Electricity Rate (₹/kWh)</label>
+                        <input type="number" class="form-control" id="electricityRate" value="6.5" step="0.1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Period</label>
+                        <select class="form-select" id="costPeriod">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly" selected>Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Estimated Cost:</span>
+                        <span id="estimatedCost">₹0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Potential Savings:</span>
+                        <span id="savingsPotential">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environmental Impact -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Environmental Impact</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Carbon Footprint</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-warning" id="carbonBar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="mb-0" id="carbonFootprint">0.00 kg CO2</p>
+                    </div>
+                    <div>
+                        <h6>Trees Equivalent</h6>
+                        <p id="treesEquivalent">0 trees needed to offset your carbon footprint</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize consumption chart
+let consumptionChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize consumption chart
+    const consumptionCtx = document.getElementById('consumptionChart').getContext('2d');
+    consumptionChart = new Chart(consumptionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ appliance_labels|safe }},
+            datasets: [{
+                data: {{ appliance_consumption|safe }},
+                backgroundColor: [
+                    'rgb(255, 99, 132)',
+                    'rgb(54, 162, 235)',
+                    'rgb(255, 205, 86)',
+                    'rgb(75, 192, 192)',
+                    'rgb(153, 102, 255)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} kWh (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Update cost calculator
+function updateCosts() {
+    const rate = document.getElementById('electricityRate').value;
+    const period = document.getElementById('costPeriod').value;
+    
+    fetch(`/api/calculate-costs/?rate=${rate}&period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('estimatedCost').textContent = `${data.currency}${data.estimated_cost}`;
+            document.getElementById('savingsPotential').textContent = `${data.currency}${data.savings_potential}`;
+        });
+}
+
+// Update environmental impact
+function updateEnvironmentalImpact() {
+    fetch('/api/environmental-impact/')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('carbonBar').style.width = `${data.carbon_percentage}%`;
+            document.getElementById('carbonFootprint').textContent = `${data.carbon_footprint} kg CO2`;
+            document.getElementById('treesEquivalent').textContent = `${data.trees_equivalent} trees needed to offset your carbon footprint`;
+        });
+}
+
+// Initialize cost calculator and environmental impact
+document.getElementById('electricityRate').addEventListener('change', updateCosts);
+document.getElementById('costPeriod').addEventListener('change', updateCosts);
+updateCosts();
+updateEnvironmentalImpact();
+</script>
+{% endblock %} 

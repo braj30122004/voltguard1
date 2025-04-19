@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Appliances - Smart Home Energy Optimizer{% endblock %}
+
+{% block content %}
+<div class="appliances-page">
+    <div class="card">
+        <h2>Add New Appliance</h2>
+        <form method="post" class="appliance-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Appliance Name</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.power_consumption.id_for_label }}">Power Consumption (Watts)</label>
+                {{ form.power_consumption }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.daily_usage.id_for_label }}">Daily Usage (Hours)</label>
+                {{ form.daily_usage }}
+            </div>
+            <button type="submit" class="btn btn-primary">Add Appliance</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Your Appliances</h2>
+        <div class="appliance-list">
+            {% for appliance in appliances %}
+            <div class="appliance-card {% if not appliance.is_active %}inactive{% endif %}">
+                <h3>{{ appliance.name }}</h3>
+                <p>Power: {{ appliance.power_consumption }} W</p>
+                <p>Daily Usage: {{ appliance.daily_usage }} hours</p>
+                <p>Daily Consumption: {{ appliance.daily_consumption|floatformat:2 }} kWh</p>
+                <div class="appliance-actions">
+                    <a href="{% url 'toggle_appliance' appliance.id %}" 
+                       class="btn {% if appliance.is_active %}btn-danger{% else %}btn-primary{% endif %}">
+                        {% if appliance.is_active %}Turn Off{% else %}Turn On{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <p>No appliances added yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Bulk Actions</h2>
+    <button id="toggleAll" class="btn btn-danger">Cut Off All Devices</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('toggleAll').addEventListener('click', function() {
+        const appliances = document.querySelectorAll('.appliance-card');
+        const isAnyActive = Array.from(appliances).some(app => !app.classList.contains('inactive'));
+        
+        appliances.forEach(appliance => {
+            if (isAnyActive) {
+                appliance.classList.add('inactive');
+                const btn = appliance.querySelector('.btn');
+                btn.classList.remove('btn-danger');
+                btn.classList.add('btn-primary');
+                btn.textContent = 'Turn On';
+            }
+        });
+        
+        this.textContent = isAnyActive ? 'Turn On All Devices' : 'Cut Off All Devices';
+        this.classList.toggle('btn-danger');
+        this.classList.toggle('btn-primary');
+    });
+</script>
+{% endblock %} 

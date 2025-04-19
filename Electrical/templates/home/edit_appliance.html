@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Appliance - Smart Home Energy Optimizer{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Edit Appliance: {{ appliance.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Power Consumption (Watts)</label>
+                            {{ form.power_consumption }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Daily Usage (Hours)</label>
+                            {{ form.daily_usage }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="{% url 'appliances' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="button" class="btn btn-danger float-end" 
+                                onclick="if(confirm('Are you sure you want to delete this appliance?')) { 
+                                    window.location.href='{% url 'delete_appliance' appliance.id %}'; 
+                                }">Delete Appliance</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

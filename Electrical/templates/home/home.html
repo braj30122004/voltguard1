@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Home -Voltgaurd{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Welcome to Voltguard</h1>
+    <p class="lead">
+        Your's Home Energy Watchdog.
+        
+    </p>
+    
+    {% if not user.is_authenticated %}
+    <div class="cta-buttons">
+        <a href="{% url 'register' %}" class="btn btn-primary">Get Started</a>
+        <a href="{% url 'login' %}" class="btn btn-secondary">Login</a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="features">
+    <div class="card">
+        <h2>Key Features</h2>
+        <ul>
+            <li>Track your appliances' energy consumption</li>
+            <li>Get personalized energy-saving recommendations</li>
+            <li>Monitor your monthly energy usage</li>
+            <li>Earn achievements for energy-saving milestones</li>
+            <li>Receive alerts when approaching energy limits</li>
+        </ul>
+    </div>
+</div>
+{% endblock %} 
